@@ -9,10 +9,10 @@ class RESTManager :
   SCHEME = "https"
   URL = SCHEME + "://" + HOST_NAME + ":" + PORT + "/api/v1/"
 
-  ID_PTF_USER = "564"
-  ID_PTF_BALANCED_USER = "565"
-  ID_PTF_RISKY_USER = "566"
-  ID_PTF_PRUDENT_USER = "567"
+  ID_PTF_USER = "564" #faux
+  ID_PTF_BALANCED_USER = "565" #faux
+  ID_PTF_RISKY_USER = "566" #faux
+  ID_PTF_PRUDENT_USER = "567" #faux
 
   USER_AUTH = ("EPITA_GROUPE11", "23FAG45wFGraRMra")
 
@@ -33,9 +33,6 @@ class RESTManager :
   ID_VAR = "14"
   ID_VOL = "10"
   ID_EXPO = "15"
-
-  def __init__(self):
-    return
 
   def get_asset(self, asset_id=None, date=None, columns=list()):
     enc = ""
@@ -64,7 +61,6 @@ class RESTManager :
 
   def get_asset_quote(self, asset_id, startDate=None, endDate=None):
     url = self.URL + "asset/" + str(asset_id) + "/quote"
-    print(url)
     payload = {'start_date': startDate, 'end_date': endDate }
     res = requests.get(url, params=payload, auth=self.USER_AUTH, verify=False)
     if res.status_code != 200:
@@ -97,28 +93,6 @@ class RESTManager :
   def put_ptf(self):
     return
 
-def get_data(app=RESTManager, columns=list()): #add end point
-  payload = {'date': app.PERIOD_START_DATE, 'fullResponse': False }
-  res = requests.get(app.URL, params=payload, auth=(app.USERNAME_USER, app.PASSWORD_USER), verify=False)
-  return res.json()
-
-def get_ratios():
-  payload = {
-    '_ratio': None,
-    '_asset': None,
-    '_bench': None,
-    '_startDate': None,
-    '_endDate': None,
-    '_frequency': None
-  }
-  res = requests.get(app.URL, params=payload, auth=(app.USERNAME_USER, app.PASSWORD_USER), verify=False)
-  return
-
-def update_portofolio():
-  payload = {'date': date, 'fullResponse': False }
-  res = requests.get(app.URL, params=payload, auth=(app.USERNAME_USER, app.PASSWORD_USER), verify=False)
-  return
-
 app = RESTManager()
 #col = ["ASSET_DATABASE_ID", "LABEL", "TYPE", "LAST_CLOSE_VALUE_IN_CURR"]
 assets = app.get_asset(columns=['ASSET_DATABASE_ID'])
@@ -132,3 +106,4 @@ ratios = app.post_ratio([app.ID_SHARPE], ids, app.PERIOD_START_DATE, app.PERIOD_
 #app.get_asset(date=app.PERIOD_START_DATE, columns=col)
 #print(get_data(app))
 #print(get_data("asset/1792", "2018-10-27"))
+#print(app.get_ptf(11))
