@@ -1,4 +1,5 @@
 import requests
+import json
 from urllib.parse import urlencode
 
 class RESTManager :
@@ -47,9 +48,9 @@ class RESTManager :
     res = requests.get(url, params=payload, auth=self.USER_AUTH, verify=False)
     if res.status_code != 200:
       print("QUERY FAILED : ERROR " + str(res.status_code))
-    return res.content.decode('utf-8')
+    return res.json()
 
- #voir asset_info_list pour les attributs 
+ #voir asset_info_list pour les attributs
   def get_asset_attribute(self, asset_id, attr_name, date=None, columns=list()):
     enc = "asset/" + str(asset_id) + "/attribute/" + attr_name
     if columns:
@@ -59,8 +60,8 @@ class RESTManager :
     res = requests.get(url, params=payload, auth=self.USER_AUTH, verify=False)
     if res.status_code != 200:
       print("QUERY FAILED : ERROR " + str(res.status_code))
-    return res.content.decode('utf-8')
-  
+    return res.json()
+
   def get_asset_quote(self, asset_id, startDate=None, endDate=None):
     url = self.URL + "asset/" + str(asset_id) + "/quote"
     print(url)
@@ -68,28 +69,38 @@ class RESTManager :
     res = requests.get(url, params=payload, auth=self.USER_AUTH, verify=False)
     if res.status_code != 200:
       print("QUERY FAILED : ERROR " + str(res.status_code))
-    return res.content.decode('utf-8')
-  
+    return res.json()
+
   def get_ratio(self):
     url = self.URL + "ratio"
     res = requests.get(url, auth=self.USER_AUTH, verify=False)
     if res.status_code != 200:
       print("QUERY FAILED : ERROR " + str(res.status_code))
-    return res.content.decode('utf-8')
-  
-  def post_ratio(self):
-    return
-  
+    return res.json()
+
+  def post_ratio(self, ratios, assets, start_date, end_date):
+    url = self.URL + "ratio/invoke"
+    payload = {
+      'ratio': ratios,
+      'asset': assets,
+      'start_date': start_date,
+      'end_date': end_date,
+    }
+    res = requests.post(url, json=payload, auth=self.USER_AUTH, verify=False)
+    if res.status_code != 200:
+      print("QUERY FAILED : ERROR " + str(res.status_code))
+    return res.json()
+
   def get_ptf(self):
     return
-  
+
   def put_ptf(self):
     return
 
 def get_data(app=RESTManager, columns=list()): #add end point
   payload = {'date': app.PERIOD_START_DATE, 'fullResponse': False }
   res = requests.get(app.URL, params=payload, auth=(app.USERNAME_USER, app.PASSWORD_USER), verify=False)
-  return res.content.decode('utf-8')
+  return res.json()
 
 def get_ratios():
   payload = {
@@ -110,10 +121,14 @@ def update_portofolio():
 
 app = RESTManager()
 #col = ["ASSET_DATABASE_ID", "LABEL", "TYPE", "LAST_CLOSE_VALUE_IN_CURR"]
-#print(app.get_asset())
+assets = app.get_asset(columns=['ASSET_DATABASE_ID'])
+ids = list(map(lambda x: int(x['ASSET_DATABASE_ID']['value']), assets))
+ratios = app.post_ratio([app.ID_SHARPE], ids, app.PERIOD_START_DATE, app.PERIOD_END_DATE)
+#ratios = sorted(ratios, key = lambda x: x[0]['value'])
+#print(ratios[:app.MIN_ACTIF])
 #app.get_asset(2)
 #print(app.get_asset(asset_id=2097, date=app.PERIOD_END_DATE, columns=col))
-print(app.get_asset_quote(asset_id=2097, startDate=app.PERIOD_END_DATE, endDate=app.PERIOD_END_DATE))
+#print(app.get_asset_quote(asset_id=2097, startDate=app.PERIOD_END_DATE, endDate=app.PERIOD_END_DATE))
 #app.get_asset(date=app.PERIOD_START_DATE, columns=col)
 #print(get_data(app))
 #print(get_data("asset/1792", "2018-10-27"))
