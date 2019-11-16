@@ -1,6 +1,5 @@
 import requests
 import json
-from operator import itemgetter
 from urllib.parse import urlencode
 
 class RESTManager :
@@ -96,13 +95,26 @@ class RESTManager :
   def put_ptf(self):
     return
 
-app = RESTManager()
-assets = app.get_asset(columns=['ASSET_DATABASE_ID'])
-ids = list(map(lambda x: int(x['ASSET_DATABASE_ID']['value']), assets))
-ratios = app.post_ratio([app.ID_SHARPE], ids, app.PERIOD_START_DATE, app.PERIOD_END_DATE)
-filtered = {k: v for k, v in ratios.items() if v['12']['type'] != 'error'}
-ratios.clear()
-ratios.update(filtered)
-sorted_ratios_assets = sorted(ratios, key=lambda k: ratios[k]['12']['value'], reverse=True)
-sorted_ratios = list(map(lambda x: {x:ratios[x]['12']['value']} , sorted_ratios_assets[:15]))
-print(sorted_ratios)
+
+def main():
+  # Init Rest manager
+  app = RESTManager()
+
+  # Get assets
+  assets = app.get_asset(columns=['ASSET_DATABASE_ID'])
+  ids = list(map(lambda x: int(x['ASSET_DATABASE_ID']['value']), assets))
+
+  # Get Sharpe ratio of assets
+  ratios = app.post_ratio([app.ID_SHARPE], ids, app.PERIOD_START_DATE, app.PERIOD_END_DATE)
+  filtered = {k: v for k, v in ratios.items() if v[app.ID_SHARPE]['type'] != 'error'}
+  ratios.clear()
+  ratios.update(filtered)
+
+  # Sort assets according to their Sharpe ratio
+  sorted_ratios_assets = sorted(ratios, key=lambda k: ratios[k][app.ID_SHARPE]['value'], reverse=True)
+  sorted_ratios = list(map(lambda x: {x:ratios[x][app.ID_SHARPE]['value']} , sorted_ratios_assets[:app.MIN_ACTIF]))
+  print(sorted_ratios)
+
+
+if __name__ == "__main__":
+    main()
