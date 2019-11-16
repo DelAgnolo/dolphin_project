@@ -1,5 +1,6 @@
 import requests
 import json
+from operator import itemgetter
 from urllib.parse import urlencode
 
 class RESTManager :
@@ -96,21 +97,12 @@ class RESTManager :
     return
 
 app = RESTManager()
-col = ["ASSET_DATABASE_ID", "LABEL", "TYPE", "IS_PORTFOLIO"]
-#assets = app.get_asset(columns=['ASSET_DATABASE_ID'])
-#ids = list(map(lambda x: int(x['ASSET_DATABASE_ID']['value']), assets))
-#ratios = app.post_ratio([app.ID_SHARPE], ids, app.PERIOD_START_DATE, app.PERIOD_END_DATE)
-#ratios = sorted(ratios, key = lambda x: x[0]['value'])
-#print(ratios[:app.MIN_ACTIF])
-#app.get_asset(2)
-t = app.get_asset(columns=col)
-r = []
-for x in t :
-  if x['IS_PORTFOLIO']['value'] == 'true':
-    r.append(x)
-print(r)
-#print(app.get_asset_quote(asset_id=2097, startDate=app.PERIOD_END_DATE, endDate=app.PERIOD_END_DATE))
-#app.get_asset(date=app.PERIOD_START_DATE, columns=col)
-#print(get_data(app()))
-#print(get_data("asset/1792", "2018-10-27"))
-#print(app.get_ptf(11))
+assets = app.get_asset(columns=['ASSET_DATABASE_ID'])
+ids = list(map(lambda x: int(x['ASSET_DATABASE_ID']['value']), assets))
+ratios = app.post_ratio([app.ID_SHARPE], ids, app.PERIOD_START_DATE, app.PERIOD_END_DATE)
+filtered = {k: v for k, v in ratios.items() if v['12']['type'] != 'error'}
+ratios.clear()
+ratios.update(filtered)
+sorted_ratios_assets = sorted(ratios, key=lambda k: ratios[k]['12']['value'], reverse=True)
+sorted_ratios = list(map(lambda x: {x:ratios[x]['12']['value']} , sorted_ratios_assets[:15]))
+print(sorted_ratios)
