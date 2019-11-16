@@ -95,6 +95,13 @@ class RESTManager :
   def put_ptf(self):
     return
 
+  def get_change_rate(self, currency_src, currency_dst):
+    url = self.URL + "currency/rate/" + currency_src + "/to/" + currency_dst
+    res = requests.get(url, auth=self.USER_AUTH, verify=True)
+    if res.status_code != 200:
+      print("QUERY FAILED : ERROR " + str(res.status_code))
+    return res.json()
+
 
 def main():
   # Init Rest manager
