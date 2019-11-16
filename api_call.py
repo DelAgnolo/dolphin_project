@@ -9,8 +9,8 @@ class RESTManager :
   SCHEME = "https"
   URL = SCHEME + "://" + HOST_NAME + ":" + PORT + "/api/v1/"
 
-  ID_PTF_USER = 1830
-  ID_PTF_REF = 2201
+  ID_PTF_USER = "1830"
+  ID_PTF_REF = "2201"
 
   USER_AUTH = ("EPITA_GROUPE11", "23FAG45wFGraRMra")
 
@@ -40,7 +40,7 @@ class RESTManager :
       enc = "/" + str(asset_id) + enc
     url = self.URL + "asset" + enc
     payload = {'date': date, 'fullResponse': False }
-    res = requests.get(url, params=payload, auth=self.USER_AUTH, verify=False)
+    res = requests.get(url, params=payload, auth=self.USER_AUTH, verify=True)
     if res.status_code != 200:
       print("QUERY FAILED : ERROR " + str(res.status_code))
     return res.json()
@@ -52,7 +52,7 @@ class RESTManager :
       enc = enc + "?" + urlencode([("columns", x) for x in columns])
     url = self.URL + enc
     payload = {'date': date, 'fullResponse': False }
-    res = requests.get(url, params=payload, auth=self.USER_AUTH, verify=False)
+    res = requests.get(url, params=payload, auth=self.USER_AUTH, verify=True)
     if res.status_code != 200:
       print("QUERY FAILED : ERROR " + str(res.status_code))
     return res.json()
@@ -60,14 +60,14 @@ class RESTManager :
   def get_asset_quote(self, asset_id, startDate=None, endDate=None):
     url = self.URL + "asset/" + str(asset_id) + "/quote"
     payload = {'start_date': startDate, 'end_date': endDate }
-    res = requests.get(url, params=payload, auth=self.USER_AUTH, verify=False)
+    res = requests.get(url, params=payload, auth=self.USER_AUTH, verify=True)
     if res.status_code != 200:
       print("QUERY FAILED : ERROR " + str(res.status_code))
     return res.json()
 
   def get_ratio(self):
     url = self.URL + "ratio"
-    res = requests.get(url, auth=self.USER_AUTH, verify=False)
+    res = requests.get(url, auth=self.USER_AUTH, verify=True)
     if res.status_code != 200:
       print("QUERY FAILED : ERROR " + str(res.status_code))
     return res.json()
@@ -80,14 +80,14 @@ class RESTManager :
       'start_date': start_date,
       'end_date': end_date,
     }
-    res = requests.post(url, json=payload, auth=self.USER_AUTH, verify=False)
+    res = requests.post(url, json=payload, auth=self.USER_AUTH, verify=True)
     if res.status_code != 200:
       print("QUERY FAILED : ERROR " + str(res.status_code))
     return res.json()
 
   def get_ptf(self, ptf_id):
     url = self.URL + "portfolio/" + str(ptf_id) + "/dyn_amount_compo"
-    res = requests.get(url, auth=self.USER_AUTH, verify=False)
+    res = requests.get(url, auth=self.USER_AUTH, verify=True)
     if res.status_code != 200:
       print("QUERY FAILED : ERROR " + str(res.status_code))
     return res.json()
