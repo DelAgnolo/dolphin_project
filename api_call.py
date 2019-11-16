@@ -9,10 +9,8 @@ class RESTManager :
   SCHEME = "https"
   URL = SCHEME + "://" + HOST_NAME + ":" + PORT + "/api/v1/"
 
-  ID_PTF_USER = "564" #faux
-  ID_PTF_BALANCED_USER = "565" #faux
-  ID_PTF_RISKY_USER = "566" #faux
-  ID_PTF_PRUDENT_USER = "567" #faux
+  ID_PTF_USER = 1830
+  ID_PTF_REF = 2201
 
   USER_AUTH = ("EPITA_GROUPE11", "23FAG45wFGraRMra")
 
@@ -87,23 +85,32 @@ class RESTManager :
       print("QUERY FAILED : ERROR " + str(res.status_code))
     return res.json()
 
-  def get_ptf(self):
-    return
+  def get_ptf(self, ptf_id):
+    url = self.URL + "portfolio/" + str(ptf_id) + "/dyn_amount_compo"
+    res = requests.get(url, auth=self.USER_AUTH, verify=False)
+    if res.status_code != 200:
+      print("QUERY FAILED : ERROR " + str(res.status_code))
+    return res.json()
 
   def put_ptf(self):
     return
 
 app = RESTManager()
-#col = ["ASSET_DATABASE_ID", "LABEL", "TYPE", "LAST_CLOSE_VALUE_IN_CURR"]
-assets = app.get_asset(columns=['ASSET_DATABASE_ID'])
-ids = list(map(lambda x: int(x['ASSET_DATABASE_ID']['value']), assets))
-ratios = app.post_ratio([app.ID_SHARPE], ids, app.PERIOD_START_DATE, app.PERIOD_END_DATE)
+col = ["ASSET_DATABASE_ID", "LABEL", "TYPE", "IS_PORTFOLIO"]
+#assets = app.get_asset(columns=['ASSET_DATABASE_ID'])
+#ids = list(map(lambda x: int(x['ASSET_DATABASE_ID']['value']), assets))
+#ratios = app.post_ratio([app.ID_SHARPE], ids, app.PERIOD_START_DATE, app.PERIOD_END_DATE)
 #ratios = sorted(ratios, key = lambda x: x[0]['value'])
 #print(ratios[:app.MIN_ACTIF])
 #app.get_asset(2)
-#print(app.get_asset(asset_id=2097, date=app.PERIOD_END_DATE, columns=col))
+t = app.get_asset(columns=col)
+r = []
+for x in t :
+  if x['IS_PORTFOLIO']['value'] == 'true':
+    r.append(x)
+print(r)
 #print(app.get_asset_quote(asset_id=2097, startDate=app.PERIOD_END_DATE, endDate=app.PERIOD_END_DATE))
 #app.get_asset(date=app.PERIOD_START_DATE, columns=col)
-#print(get_data(app))
+#print(get_data(app()))
 #print(get_data("asset/1792", "2018-10-27"))
 #print(app.get_ptf(11))
