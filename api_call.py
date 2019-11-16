@@ -92,16 +92,35 @@ class RESTManager :
       print("QUERY FAILED : ERROR " + str(res.status_code))
     return res.json()
 
-  def put_ptf(self):
-    return
+  def put_ptf(self, ptf_id, label, assets):
+    url = self.URL + "portfolio/" + str(ptf_id) + "/dyn_amount_compo"
+    payload = {
+      'label': label,
+      'currency': {
+        'code': 'EUR'
+      },
+      'type': 'front',
+      'values': {self.PERIOD_START_DATE: assets}
+    }
+    print(payload)
+    res = requests.put(url, json=payload, auth=self.USER_AUTH, verify=True)
+    if res.status_code != 200:
+      print("QUERY FAILED : ERROR " + str(res.status_code))
+      return False
+    return True
 
+def find_asset_by_id(json, id):
+  for asset in json:
+    if asset['ASSET_DATABASE_ID']['value']==id:
+      return asset
 
 def main():
   # Init Rest manager
   app = RESTManager()
 
   # Get assets
-  assets = app.get_asset(columns=['ASSET_DATABASE_ID'])
+  assets = app.get_asset(columns=['ASSET_DATABASE_ID', 'LAST_CLOSE_VALUE', 'CURRENCY', 'IS_PORTFOLIO'])
+  assets = list(filter(lambda x:x['IS_PORTFOLIO']['value'] == 'false', assets))
   ids = list(map(lambda x: int(x['ASSET_DATABASE_ID']['value']), assets))
 
   # Get Sharpe ratio of assets
@@ -112,9 +131,39 @@ def main():
 
   # Sort assets according to their Sharpe ratio
   sorted_ratios_assets = sorted(ratios, key=lambda k: ratios[k][app.ID_SHARPE]['value'], reverse=True)
-  sorted_ratios = list(map(lambda x: {x:ratios[x][app.ID_SHARPE]['value']} , sorted_ratios_assets[:app.MIN_ACTIF]))
-  print(sorted_ratios)
+  sorted_ratios = list(map(lambda x: {'ratio': ratios[x][app.ID_SHARPE]['value'], 'asset': find_asset_by_id(assets, x)}, sorted_ratios_assets[:15]))
 
+  ptf_assets = []
+  for asset in sorted_ratios:
+    ptf_assets.append({
+      'asset': {
+        'asset': asset['asset']['ASSET_DATABASE_ID']['value'],
+        'quantity': 1
+      },
+    })
+
+  res = app.put_ptf(app.ID_PTF_USER, "EPITA_PTF_11", ptf_assets)
+
+
+def check():
+  app = RESTManager()
+
+  ptf = app.get_ptf(app.ID_PTF_USER)
+  print(ptf)
 
 if __name__ == "__main__":
     main()
+
+# format put ptf assets :
+# [
+#   'asset': {
+#     'asset': 10,
+#     'quantity': 10
+#   },
+#   'currency': {
+#     'currency': {
+#       'code': 'EUR'
+#     },
+#     'amount': 1
+#   },
+# ]
