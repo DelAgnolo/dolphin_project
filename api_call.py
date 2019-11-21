@@ -128,6 +128,10 @@ def find_asset_by_id(json, id):
         if asset['ASSET_DATABASE_ID']['value'] == id:
             return asset
 
+def get_weight(app, ratios, x):
+  return (2*float(ratios[x][app.ID_SHARPE]['value'].replace(',', '.'))
+    * float(ratios[x][app.ID_RETURN]['value'].replace(',', '.'))
+    / float(ratios[x][app.ID_VOL]['value'].replace(',', '.')))
 
 def main():
     # Init Rest manager
@@ -140,39 +144,56 @@ def main():
         filter(lambda x: x['IS_PORTFOLIO']['value'] == 'false', assets))
     ids = list(map(lambda x: int(x['ASSET_DATABASE_ID']['value']), assets))
 
-    # Get Sharpe ratio of assets
-    ratios = app.post_ratio([app.ID_SHARPE, app.ID_VOL, app.ID_ANNUAL_RETURN],
+    # Get Sharpe/Vol/Return ratio of assets
+    ratios = app.post_ratio([app.ID_SHARPE, app.ID_VOL, app.ID_RETURN],
                             ids, app.PERIOD_START_DATE, app.PERIOD_END_DATE)
+
+    # Remove assets with missing ratios
     filtered = {k: v for k, v in ratios.items(
-    ) if v[app.ID_SHARPE]['type'] != 'error' and v[app.ID_ANNUAL_RETURN]['type'] != 'error' and v[app.ID_VOL]['type'] != 'error'}
+    ) if v[app.ID_SHARPE]['type'] != 'error'
+    and v[app.ID_RETURN]['type'] != 'error'
+    and v[app.ID_VOL]['type'] != 'error'
+    and float(v[app.ID_SHARPE]['value'].replace(',', '.')) > 0.8
+    and float(v[app.ID_RETURN]['value'].replace(',', '.')) > 2
+    and float(v[app.ID_VOL]['value'].replace(',', '.')) > 0}
     ratios.clear()
     ratios.update(filtered)
 
     # Sort assets according to their Sharpe ratio
     total_assets = 15
-    sorted_ratios_assets = sorted(ratios, key=lambda k: float(
-        ratios[k][app.ID_SHARPE]['value'].replace(',', '.')), reverse=True)
-    sorted_ratios = list(map(lambda x: {'sharpe': ratios[x][app.ID_SHARPE]['value'], 'vol': ratios[x][app.ID_VOL]['value'], 'return': ratios[x][app.ID_ANNUAL_RETURN]['value'], 'asset': find_asset_by_id(
-        assets, x)}, sorted_ratios_assets[:total_assets]))
+
+    sorted_ratios = sorted(ratios, key=lambda x: get_weight(app, ratios, x), reverse=True)
+    assets_ratios = list(map(lambda x: {
+      'weight': get_weight(app, ratios, x),
+      'sharpe': ratios[x][app.ID_SHARPE]['value'],
+      'vol': ratios[x][app.ID_VOL]['value'],
+      'return': ratios[x][app.ID_RETURN]['value'],
+      'asset': find_asset_by_id(assets, x)}, sorted_ratios[:total_assets]))
 
     total_sum = reduce(lambda a, b: a + float(b['asset']['LAST_CLOSE_VALUE']
-                                              ['value'].split(' ')[0].replace(',', '.')), sorted_ratios, 0)
+                                              ['value'].split(' ')[0].replace(',', '.')), assets_ratios, 0)
 
     ptf_assets = []
-    for asset in sorted_ratios:
+    for asset in assets_ratios:
         ret = float(asset['return'].replace(',', '.'))
         vol = float(asset['vol'].replace(',', '.'))
+        sharpe = float(asset['sharpe'].replace(',', '.'))
+        weight = asset['weight']
         val = float(asset['asset']['LAST_CLOSE_VALUE']
                     ['value'].split(' ')[0].replace(',', '.'))
+
+        print(asset['asset']['ASSET_DATABASE_ID']['value'] + " - " + str(weight) + " - " + str(sharpe) + " - " + str(vol) + " - " + str(ret))
         ptf_assets.append({
             'asset': {
                 'asset': asset['asset']['ASSET_DATABASE_ID']['value'],
-                'quantity': str(ret/vol*(total_sum/total_assets/val))
+                'quantity': str(asset['weight']*(total_sum/total_assets/val))
             },
         })
-    # print(ptf_assets)
+    print("nb assets : " + str(len(ptf_assets)))
+   # print([(x['asset']['quantity']) for x in ptf_assets])
 
     res = app.put_ptf(app.ID_PTF_USER, "EPITA_PTF_11", ptf_assets)
+    check()
 
 
 def check():
@@ -182,9 +203,6 @@ def check():
         app.ID_PTF_USER)], app.PERIOD_START_DATE, app.PERIOD_END_DATE)
     print('group: ' + ratios[app.ID_PTF_USER][app.ID_SHARPE]['value'])
     print('ref: ' + ratios[app.ID_PTF_REF][app.ID_SHARPE]['value'])
-    # print(app.get_ptf(app.ID_PTF_USER))
-    print(app.get_asset(2064).keys())
-
 
 if __name__ == "__main__":
-    check()
+    main()
