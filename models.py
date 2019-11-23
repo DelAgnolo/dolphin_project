@@ -1,5 +1,5 @@
 class Asset:
-    def __init__(self, id, is_portfolio, type=None, nav=None, ratios=None, quantity=None):
+    def __init__(self, id, is_portfolio=None, type=None, nav=None, ratios=None, quantity=None):
         self.id = id
         self.is_portfolio = is_portfolio
         self.type = type

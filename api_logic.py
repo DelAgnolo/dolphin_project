@@ -74,7 +74,7 @@ class APILogic:
         json = self.api.post_ratio([12], [int(self.api.ID_PTF_USER), int(
             self.api.ID_PTF_USER)], self.api.PERIOD_START_DATE, self.api.PERIOD_END_DATE)
         if json is not None:
-            return json[self.api.ID_PTF_USER][self.api.ID_SHARPE]['value']
+            return float(json[self.api.ID_PTF_USER][self.api.ID_SHARPE]['value'].replace(',', '.'))
 
     def update_ptf(self, assets):
         if not isinstance(assets, list):
