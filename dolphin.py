@@ -39,7 +39,8 @@ def main():
         item.quantity = int(((total_nav)/TOTAL_ASSETS/item.nav)*1000)
         total_nav2 += item.nav*item.quantity
 
-    # app.update_ptf(best_assets)
+    app.update_ptf(best_assets)
+    app.update_ptf(best_assets)
 
     print("new ratio :" + app.get_user_ptf_sharpe())
 
