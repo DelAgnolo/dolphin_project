@@ -5,7 +5,8 @@ from api_logic import APILogic
 from models import Asset
 
 TOTAL_ASSETS = 15
-
+UP_RATE=1.15
+DOWN_RATE=0.95
 
 def get_weight(ratios):
     return (2*ratios.sharpe*ratios.ret)/ratios.vol
@@ -39,7 +40,7 @@ def improve_ptf(app, assets, stop_assets_up, stop_assets_down, base_ratio):
   for item in assets:
     print("Dolphin: Trying up with " + str(item.id))
     if item.id not in stop_assets_up:
-      new_percent_up = (item.quantity * 1.1 * item.nav)/(total_nav - (item.quantity * item.nav) + int(item.quantity * 1.1) * item.nav)
+      new_percent_up = (item.quantity * UP_RATE * item.nav)/(total_nav - (item.quantity * item.nav) + int(item.quantity *  UP_RATE) * item.nav)
       if (new_percent_up > 0.1 or new_percent_up < 0.01):
         print("Dolphin: max found for asset " + str(item.id))
         ratios_up.append(0)
@@ -47,7 +48,7 @@ def improve_ptf(app, assets, stop_assets_up, stop_assets_down, base_ratio):
       else:
         print("Dolphin: updating quantity for asset " + str(item.id))
         save_quantity = item.quantity
-        item.quantity = int(item.quantity * 1.1)
+        item.quantity = int(item.quantity *  UP_RATE)
         app.update_ptf(assets)
         app.update_ptf(assets)
         new_ratio = app.get_user_ptf_sharpe()
@@ -59,7 +60,7 @@ def improve_ptf(app, assets, stop_assets_up, stop_assets_down, base_ratio):
 
     print("Dolphin: Trying down with " + str(item.id))
     if item.id not in stop_assets_down:
-      new_percent_down = (item.quantity * 0.9 * item.nav)/(total_nav - (item.quantity * item.nav) + int(item.quantity * 0.9) * item.nav)
+      new_percent_down = (item.quantity * DOWN_RATE * item.nav)/(total_nav - (item.quantity * item.nav) + int(item.quantity * DOWN_RATE) * item.nav)
       if (new_percent_down > 0.1 or new_percent_down < 0.01):
         print("Dolphin: max found for asset " + str(item.id))
         ratios_down.append(0)
@@ -67,7 +68,7 @@ def improve_ptf(app, assets, stop_assets_up, stop_assets_down, base_ratio):
       else:
         print("Dolphin: updating quantity for asset " + str(item.id))
         save_quantity = item.quantity
-        item.quantity = int(item.quantity * 0.9)
+        item.quantity = int(item.quantity * DOWN_RATE)
         app.update_ptf(assets)
         app.update_ptf(assets)
         new_ratio = app.get_user_ptf_sharpe()
@@ -94,14 +95,16 @@ def improve_ptf(app, assets, stop_assets_up, stop_assets_down, base_ratio):
       print(item.quantity, end=", ")
     print("]")
 
-    print("Dolphin: Best final ratio: " + str(base_ratio))
+    app.update_ptf(assets)
+    app.update_ptf(assets)
+    print("Dolphin: Best final ratio: " + str(app.get_user_ptf_sharpe()))
     return
 
   if not up:
-    assets[max_index].quantity = int(assets[max_index].quantity * 0.9)
+    assets[max_index].quantity = int(assets[max_index].quantity * DOWN_RATE)
     print("Dolphin: Going down with asset " + str(assets[max_index].id))
   else:
-    assets[max_index].quantity = int(assets[max_index].quantity * 1.1)
+    assets[max_index].quantity = int(assets[max_index].quantity * UP_RATE)
     print("Dolphin: Going up with asset " + str(assets[max_index].id))
 
 
@@ -157,9 +160,9 @@ def check():
     for item in ptf.assets:
         print(item.id + " - " + str(item.quantity))
 
-    print("Dolphin: ratio :" + app.get_user_ptf_sharpe())
+    print("Dolphin: ratio :" + str(app.get_user_ptf_sharpe()))
 
-def save():
+def save(only_push=False):
   app = APILogic()
 
   assets = [Asset(2112, quantity=8027, nav=14.35),
@@ -182,6 +185,8 @@ def save():
   new_quantities = [ 4738, 12771, 4327, 95140, 21021, 22155, 81, 30901, 4170, 10989, 9394, 514, 10506, 13076, 2193 ] # 2.512252348115
   new_quantities = [ 2516, 9308, 4327, 95140, 15323, 11772, 89, 30901, 4170, 2511, 9394, 114, 6202, 13076, 497 ] # 2.556050614378
   new_quantities = [ 2516, 9308, 4327, 95140, 15323, 10594, 89, 30901, 4170, 2511, 9394, 114, 6202, 13076, 497 ] # 2.55606999004
+  new_quantities = [ 2516, 8842, 4327, 95140, 15323, 10594, 89, 30901, 4170, 2511, 9394, 108, 6202, 12422, 497 ] # 2.556471976733
+  new_quantities = [ 2516, 8842, 4327, 95140, 15323, 10594, 89, 29355, 3961, 2511, 9394, 102, 6202, 12422, 497 ] # 2.556703403807
   for i, quant in enumerate(new_quantities):
      assets[i].quantity = quant
 
@@ -192,8 +197,11 @@ def save():
   print("Dolphin: intial ratio :" + str(ratio))
 
 
-  improve_ptf(app, assets, [], [], ratio)
+  if not only_push:
+    improve_ptf(app, assets, [], [], ratio)
 
 
 if __name__ == "__main__":
-    save()
+    #check()
+    #save()
+    save(only_push=True)
